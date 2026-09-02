@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest manifest-version="0.1" xmlns="http://www.tableau.com/xml/extension_manifest">
+  <dashboard-extension id="com.boonthavorn.showroom-display-performance" extension-version="1.0.0">
+    <default-locale>en_US</default-locale>
+    <name resource-id="name"/>
+    <description>Showroom Display Performance — Sales performance comparison between Display and Non-Display articles across showrooms</description>
+    <author name="Warinda" email="warinda.nor@boonthavorn.com" organization="Boonthavorn" website="https://github.com/warinda-nor/vend_sales_display_sh"/>
+    <min-api-version>1.4</min-api-version>
+    <source-location>
+      <url>https://warinda-nor.github.io/vend_sales_display_sh/display-performance/index.html</url>
+    </source-location>
+    <icon>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</icon>
+    <permissions>
+      <permission>full data</permission>
+    </permissions>
+  </dashboard-extension>
+  <resources>
+    <resource id="name">
+      <text locale="en_US">Showroom Display Performance</text>
+    </resource>
+  </resources>
+</manifest>

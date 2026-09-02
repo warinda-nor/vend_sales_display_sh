@@ -1,0 +1,16 @@
+# Source data files — contain real company sales/vendor/pricing data, never push these
+*.xlsx
+*.xls
+*.csv
+
+# Data preview — the embedded DATA object is a full real-data snapshot (Net Sales,
+# article/vendor names, showroom breakdowns) baked into static HTML. Local-only, never push.
+preview/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor/tooling junk
+.vscode/
+node_modules/

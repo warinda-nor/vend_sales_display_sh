@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showroom Display Performance</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:            #f9f9f7;
+    --surface-1:       #fcfcfb;
+    --text-primary:    #0b0b0b;
+    --text-secondary:  #52514e;
+    --text-muted:      #898781;
+    --grid:            #e1e0d9;
+    --baseline:        #c3c2b7;
+    --border:          rgba(11,11,11,0.10);
+    --series-accent:   #2a78d6;
+    --good:            #006300;
+    --critical:        #d03b3b;
+    --navy:            #14213d;
+    --navy-2:          #1c2d52;
+    --flag-display:      #00CED1;
+    --flag-nondisplay:   #AFEEEE;
+    --flag-display-wash:    rgba(0,206,209,0.14);
+    --flag-nondisplay-wash: rgba(175,238,238,0.35);
+    --tt-text:         #0b0b0b;
+    --tt-text-muted:   rgba(11,11,11,0.62);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:            #0d0d0d;
+      --surface-1:       #1a1a19;
+      --text-primary:    #ffffff;
+      --text-secondary:  #c3c2b7;
+      --text-muted:      #898781;
+      --grid:            #2c2c2a;
+      --baseline:        #383835;
+      --border:          rgba(255,255,255,0.10);
+      --series-accent:   #3987e5;
+      --good:            #0ca30c;
+      --critical:        #e66767;
+      --navy:            #0c1424;
+      --navy-2:          #14213d;
+      --flag-display:      #00CED1;
+      --flag-nondisplay:   #AFEEEE;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:            #0d0d0d;
+    --surface-1:       #1a1a19;
+    --text-primary:    #ffffff;
+    --text-secondary:  #c3c2b7;
+    --text-muted:      #898781;
+    --grid:            #2c2c2a;
+    --baseline:        #383835;
+    --border:          rgba(255,255,255,0.10);
+    --series-accent:   #3987e5;
+    --good:            #0ca30c;
+    --critical:        #e66767;
+    --navy:            #0c1424;
+    --navy-2:          #14213d;
+    --flag-display:      #00CED1;
+    --flag-nondisplay:   #AFEEEE;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1600px; margin: 0 auto; padding: 0 0 32px; }
+
+  .banner { display: none; border-bottom: 1px solid var(--border); font-size: 12.5px; padding: 8px 24px; text-align: center; }
+  .banner.status { display: block; background: var(--flag-display-wash); color: var(--text-secondary); }
+  .banner.error { display: block; background: rgba(208,59,59,0.14); color: var(--critical); font-weight: 700; }
+  .field-error-list { text-align: left; max-width: 640px; margin: 8px auto 0; font-weight: 400; }
+  .field-error-list li { margin: 2px 0; }
+
+  header.topbar {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: #fff;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand .mark {
+    width: 46px; height: 46px; border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex: none;
+  }
+  .brand h1 { font-size: 22px; margin: 0; letter-spacing: 0.02em; font-weight: 700; }
+  .brand p { margin: 3px 0 0; font-size: 14px; color: rgba(255,255,255,0.72); }
+
+
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 20px 24px 0; }
+  .col-3 { grid-column: span 3; }
+  .col-4 { grid-column: span 4; }
+  .col-6 { grid-column: span 6; }
+  .col-12 { grid-column: span 12; }
+  @media (max-width: 900px) {
+    .col-3, .col-4, .col-6 { grid-column: span 12; }
+  }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card h3 { font-size: 15px; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-primary); font-weight: 700; }
+  .card p.sub { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); }
+
+  .card-head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .card-head-actions { display: flex; align-items: center; gap: 14px; flex: none; }
+  .card-toolbar { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-1); color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none;
+  }
+  .icon-btn:hover { background: var(--grid); color: var(--text-primary); }
+  .btn-pill {
+    border: 1px solid var(--border); background: var(--surface-1); border-radius: 20px;
+    padding: 0 14px; height: 32px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary);
+    cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .btn-pill:hover { background: var(--grid); color: var(--text-primary); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(11,11,11,0.45); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 900px; width: 100%; max-height: 80vh; overflow: auto; }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .modal-head h4 { margin: 0; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-primary); }
+
+  .toggle-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; cursor: pointer; flex: none; }
+  .toggle-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
+  .toggle-switch { position: relative; display: inline-block; width: 34px; height: 19px; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--grid); border-radius: 20px; transition: background 0.15s; }
+  .toggle-slider::before { content: ""; position: absolute; height: 15px; width: 15px; left: 2px; top: 2px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(11,11,11,0.25); transition: transform 0.15s; }
+  .toggle-switch input:checked + .toggle-slider { background: var(--flag-display); }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(15px); }
+
+  .kpi-row { display: flex; align-items: center; gap: 16px; }
+  .kpi-icon { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; }
+  .kpi-text { display: flex; flex-direction: column; min-width: 0; }
+  .kpi-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
+  .kpi-value { font-size: 30px; font-weight: 700; line-height: 1.15; margin-top: 4px; }
+  .kpi-value.kpi-value-text { font-size: 17px; line-height: 1.3; }
+  .kpi-meta { font-size: 13px; color: var(--text-secondary); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+  .kpi-meta .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .kpi-meta b { color: var(--text-primary); }
+
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
+  .legend-row .li { display: flex; align-items: center; gap: 6px; }
+  .legend-row .sw { width: 10px; height: 10px; border-radius: 50%; }
+
+  #chart-branch, #chart-mch2 { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .stackbar-rows { display: flex; flex-direction: column; flex: 1; justify-content: space-evenly; }
+  .stackbar-row { display: grid; grid-template-columns: 170px 1fr 90px; align-items: center; gap: 10px; padding: 7px 0; }
+  .stackbar-row .rowlabel { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stackbar-track { display: flex; height: 24px; border-radius: 5px; overflow: hidden; background: var(--grid); }
+  .stackbar-seg { display: flex; align-items: center; justify-content: center; font-size: 10.5px; color: #0b0b0b; font-weight: 600; white-space: nowrap; overflow: hidden; cursor: crosshair; }
+  .stackbar-seg:hover { filter: brightness(1.12); }
+  .stackbar-total { text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+
+  #table-topDisplay, #table-topNonDisplay { overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data-table th {
+    text-align: right; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--text-muted); font-weight: 700; padding: 6px 9px; border-bottom: 1px solid var(--grid);
+  }
+  table.data-table th:first-child, table.data-table td:first-child { text-align: left; }
+  table.data-table th:nth-child(3), table.data-table td:nth-child(3) { text-align: left; }
+  table.data-table td { padding: 9px 9px; border-bottom: 1px solid var(--grid); color: var(--text-secondary); }
+  table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data-table tr:hover td { background: rgba(42,120,214,0.06); }
+  table.data-table td.rank { color: var(--text-muted); width: 26px; }
+  table.data-table td.name { color: var(--text-primary); font-weight: 400; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  table.data-table td.thumb { width: 44px; padding-right: 4px; }
+  table.data-table .prod-thumb { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: var(--grid); display: block; border: 1px solid var(--border); }
+  table.data-table th.sortcol { color: var(--flag-display); }
+  table.data-table td.sortcol { color: var(--text-primary); font-weight: 700; }
+
+  .tooltip {
+    position: fixed;
+    display: none;
+    z-index: 999;
+    pointer-events: none;
+    color: var(--tt-text);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    max-width: 240px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.65);
+    box-shadow:
+      0 10px 30px rgba(11,11,11,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.85),
+      inset 0 0 0 1px rgba(255,255,255,0.3);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .tooltip { background: rgba(255,255,255,0.96); }
+  }
+  .tooltip .tt-title { position: relative; display: flex; align-items: center; gap: 7px; font-weight: 700; margin-bottom: 6px; font-size: 12.5px; color: var(--tt-text); }
+  .tooltip .tt-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .tooltip .tt-row { position: relative; display: flex; justify-content: space-between; gap: 14px; color: var(--tt-text-muted); }
+  .tooltip .tt-row b { color: var(--tt-text); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="banner status" id="statusBanner">Connecting to Tableau…</div>
+  <div class="banner error" id="errorBanner"></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="1.5" stroke="#fff" stroke-width="2"/><path d="M9 20h6M12 16v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <h1>SHOWROOM DISPLAY PERFORMANCE</h1>
+        <p>Sales Performance : Display vs Non-Display</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card col-3" id="kpi-vendor"></div>
+    <div class="card col-3" id="kpi-netSales"></div>
+    <div class="card col-3" id="kpi-display"></div>
+    <div class="card col-3" id="kpi-nondisplay"></div>
+
+    <div class="card col-6">
+      <div class="card-head-row">
+        <div>
+          <h3>Sales by Sales Office</h3>
+          <p class="sub">% Share of Net Sales — Display vs Non-Display, by showroom</p>
+        </div>
+        <div class="card-head-actions">
+          <div class="card-toolbar">
+            <button class="icon-btn" type="button" data-download="branch" title="Download table">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <button class="btn-pill" type="button" data-viewtable="branch">View table</button>
+          </div>
+        </div>
+      </div>
+      <div id="chart-branch"></div>
+    </div>
+    <div class="card col-6">
+      <div class="card-head-row">
+        <div>
+          <h3>Sales by MCH2</h3>
+          <p class="sub">% Share of Net Sales — Display vs Non-Display, by merchandise group (MCH2)</p>
+        </div>
+        <div class="card-head-actions">
+          <div class="card-toolbar">
+            <button class="icon-btn" type="button" data-download="mch2" title="Download table">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <button class="btn-pill" type="button" data-viewtable="mch2">View table</button>
+          </div>
+        </div>
+      </div>
+      <div id="chart-mch2"></div>
+    </div>
+
+    <div class="card col-6">
+      <div class="card-head-row">
+        <div>
+          <h3>Top 10 Article — Display</h3>
+          <p class="sub" id="topDisplay-sub">Ranked by Net Sales, articles with showroom display</p>
+        </div>
+        <div class="card-head-actions">
+          <label class="toggle-wrap">
+            <span class="toggle-label">Rank by Sales Qty</span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="topDisplayToggle">
+              <span class="toggle-slider"></span>
+            </span>
+          </label>
+          <button class="icon-btn" type="button" data-download="topDisplay" title="Download table">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="table-topDisplay"></div>
+    </div>
+    <div class="card col-6">
+      <div class="card-head-row">
+        <div>
+          <h3>Top 10 Article — Non-Display</h3>
+          <p class="sub" id="topNonDisplay-sub">Ranked by Net Sales, articles without showroom display</p>
+        </div>
+        <div class="card-head-actions">
+          <label class="toggle-wrap">
+            <span class="toggle-label">Rank by Sales Qty</span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="topNonDisplayToggle">
+              <span class="toggle-slider"></span>
+            </span>
+          </label>
+          <button class="icon-btn" type="button" data-download="topNonDisplay" title="Download table">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="table-topNonDisplay"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip" class="tooltip"></div>
+
+<div class="modal-overlay" id="tableModalOverlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h4 id="tableModalTitle">Table</h4>
+      <button class="icon-btn" type="button" id="tableModalClose" title="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="tableModalBody"></div>
+  </div>
+</div>
+
+<script src="../tableau.extensions.1.latest.js"></script>
+<script>
+let DATA = null;
+
+function num(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
+function fmtCompact(n, digits) {
+  digits = digits === undefined ? 2 : digits;
+  const abs = Math.abs(n);
+  if (abs >= 1e6) return (n/1e6).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }) + 'M';
+  if (abs >= 1e3) return (n/1e3).toFixed(digits) + 'K';
+  return n.toFixed(0);
+}
+function fmtInt(n) { return Math.round(n).toLocaleString('en-US'); }
+function fmtM(n) { return (n/1e6).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + 'M'; }
+function fmtPct(n, digits) {
+  digits = digits === undefined ? 1 : digits;
+  return (n*100).toFixed(digits) + '%';
+}
+
+const FLAG_COLOR = { Display: 'var(--flag-display)', NonDisplay: 'var(--flag-nondisplay)' };
+const FLAG_LABEL = { Display: 'Display', NonDisplay: 'Non-Display' };
+const FLAG_ORDER = ['Display', 'NonDisplay'];
+
+/* ---------------- tooltip ---------------- */
+const tooltipEl = document.getElementById('tooltip');
+function showTooltip(x, y, html) {
+  tooltipEl.innerHTML = html;
+  tooltipEl.style.display = 'block';
+  const pad = 14;
+  const rect = tooltipEl.getBoundingClientRect();
+  let left = x + pad;
+  let top = y + pad;
+  if (left + rect.width > window.innerWidth - 8) left = x - rect.width - pad;
+  if (top + rect.height > window.innerHeight - 8) top = y - rect.height - pad;
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = top + 'px';
+}
+function hideTooltip() { tooltipEl.style.display = 'none'; }
+
+/* ---------------- KPI tiles ---------------- */
+function renderKpi(id, opts) {
+  const el = document.getElementById(id);
+  const valueClass = opts.valueClass ? ` ${opts.valueClass}` : '';
+  el.innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi-icon" style="background:${opts.iconBg};color:${opts.iconColor}">${opts.icon}</div>
+      <div class="kpi-text">
+        <div class="kpi-label">${opts.label}</div>
+        <div class="kpi-value${valueClass}">${opts.value}</div>
+        <div class="kpi-meta">${opts.meta}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderKpis() {
+  const k = DATA.kpi;
+  const total = k.netTotal;
+  const iconVendor = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 21V7l8-4 8 4v14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 21v-6h6v6M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const iconSales = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 18V10M10 18V6M16 18V13M20 18V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const iconDisplay = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M9 20h6M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  const iconBox = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 8l-9-5-9 5 9 5 9-5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+
+  const vendors = DATA.meta.vendors || [];
+  const firstVendor = vendors[0] || { vendorId: '—', vendorName: '—' };
+  renderKpi('kpi-vendor', {
+    label: 'Vendor',
+    value: firstVendor.vendorName,
+    valueClass: 'kpi-value-text',
+    iconBg: 'var(--border)', iconColor: 'var(--text-secondary)',
+    icon: iconVendor,
+    meta: vendors.length > 1 ? `Vendor ID : <b>${firstVendor.vendorId}</b> +${vendors.length - 1} more` : `Vendor ID : <b>${firstVendor.vendorId}</b>`,
+  });
+  renderKpi('kpi-netSales', {
+    label: 'Net Sales (Total)',
+    value: fmtM(total),
+    iconBg: 'var(--border)', iconColor: 'var(--text-secondary)',
+    icon: iconSales,
+    meta: `Sales Qty : <b>${fmtInt(k.qtyDisplay + k.qtyNonDisplay)}</b>`,
+  });
+  renderKpi('kpi-display', {
+    label: 'Net Sales — Display',
+    value: fmtM(k.netDisplay),
+    iconBg: 'var(--flag-display-wash)', iconColor: 'var(--flag-display)',
+    icon: iconDisplay,
+    meta: `<span class="dot" style="background:var(--flag-display)"></span>${fmtPct(total ? k.netDisplay/total : 0)} of total sales`,
+  });
+  renderKpi('kpi-nondisplay', {
+    label: 'Net Sales — Non-Display',
+    value: fmtM(k.netNonDisplay),
+    iconBg: 'var(--flag-nondisplay-wash)', iconColor: 'var(--flag-nondisplay)',
+    icon: iconBox,
+    meta: `<span class="dot" style="background:var(--flag-nondisplay)"></span>${fmtPct(total ? k.netNonDisplay/total : 0)} of total sales`,
+  });
+}
+
+/* ---------------- stacked bar chart (shared) ---------------- */
+function renderStackedBars(containerId, rows) {
+  const el = document.getElementById(containerId);
+  const legend = `<div class="legend-row">${FLAG_ORDER.map(f => `<span class="li"><span class="sw" style="background:${FLAG_COLOR[f]}"></span>${FLAG_LABEL[f]}</span>`).join('')}</div>`;
+
+  const body = rows.map((r, ri) => {
+    const total = r.total;
+    const segs = FLAG_ORDER.map(f => {
+      const val = num(r[f]);
+      const share = total ? val / total : 0;
+      if (share <= 0) return '';
+      const pctOfTotal = fmtPct(share, 0);
+      const segLabel = `${fmtCompact(val)} (${pctOfTotal})`;
+      const segText = share > 0.22 ? segLabel : (share > 0.08 ? pctOfTotal : '');
+      return `<div class="stackbar-seg" data-row="${ri}" data-flag="${f}" style="width:${(share*100).toFixed(2)}%;background:${FLAG_COLOR[f]}">${segText}</div>`;
+    }).join('');
+    return `<div class="stackbar-row">
+      <div class="rowlabel" title="${r.label}">${r.label}</div>
+      <div class="stackbar-track">${segs}</div>
+      <div class="stackbar-total">${fmtCompact(total)}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = legend + `<div class="stackbar-rows">${body}</div>`;
+
+  el.querySelectorAll('.stackbar-seg').forEach(segEl => {
+    const r = rows[+segEl.dataset.row];
+    const f = segEl.dataset.flag;
+    const val = num(r[f]);
+    const share = r.total ? val / r.total : 0;
+    const html = `
+      <div class="tt-title"><span class="tt-dot" style="background:${FLAG_COLOR[f]}"></span>${FLAG_LABEL[f]} — ${r.label}</div>
+      <div class="tt-row"><span>Net Sales</span><b>${fmtM(val)}</b></div>
+      <div class="tt-row"><span>Share of row</span><b>${fmtPct(share,1)}</b></div>
+      <div class="tt-row"><span>Row total</span><b>${fmtM(r.total)}</b></div>
+    `;
+    segEl.addEventListener('mouseenter', e => showTooltip(e.clientX, e.clientY, html));
+    segEl.addEventListener('mousemove', e => showTooltip(e.clientX, e.clientY, html));
+    segEl.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+/* ---------------- Top 10 article tables ---------------- */
+const PRODUCT_IMAGE_BASE = 'https://productimage.boonthavorn.com/o2/';
+
+function renderTop10Table(containerId, rows, rankBy) {
+  const el = document.getElementById(containerId);
+  const netCls = rankBy === 'net' ? ' class="num sortcol"' : ' class="num"';
+  const qtyCls = rankBy === 'qty' ? ' class="num sortcol"' : ' class="num"';
+  const body = rows.map((r, i) => `<tr>
+    <td class="rank">${i+1}</td>
+    <td class="thumb"><img class="prod-thumb" src="${PRODUCT_IMAGE_BASE}${r.articleId}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
+    <td class="name" title="${r.articleName}">${r.articleName}</td>
+    <td>${r.brand || '—'}</td>
+    <td>${r.mch2 || '—'}</td>
+    <td${netCls}>${fmtCompact(r.net)}</td>
+    <td${qtyCls}>${fmtInt(r.qty)}</td>
+  </tr>`).join('');
+
+  el.innerHTML = `<table class="data-table">
+    <thead><tr>
+      <th>#</th><th>Image</th><th>Article</th><th>Brand</th><th>MCH2</th><th${netCls}>Net Sales</th><th${qtyCls}>Sales Qty</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`;
+}
+
+function renderTop10Card(containerId, toggleId, subId, byNetRows, byQtyRows, subtext) {
+  const toggle = document.getElementById(toggleId);
+  const rankBy = toggle.checked ? 'qty' : 'net';
+  document.getElementById(subId).textContent = `Ranked by ${rankBy === 'qty' ? 'Sales Qty' : 'Net Sales'}, ${subtext}`;
+  renderTop10Table(containerId, rankBy === 'qty' ? byQtyRows : byNetRows, rankBy);
+}
+
+/* ---------------- boot ---------------- */
+function renderTop10Section() {
+  renderTop10Card('table-topDisplay', 'topDisplayToggle', 'topDisplay-sub', DATA.top10DisplayByNet, DATA.top10DisplayByQty, 'articles with showroom display');
+  renderTop10Card('table-topNonDisplay', 'topNonDisplayToggle', 'topNonDisplay-sub', DATA.top10NonDisplayByNet, DATA.top10NonDisplayByQty, 'articles without showroom display');
+}
+
+function renderAll() {
+  renderKpis();
+  renderStackedBars('chart-branch', DATA.byBranch);
+  renderStackedBars('chart-mch2', DATA.byMch2);
+  renderTop10Section();
+}
+
+/* ---------------- per-card download / view table ---------------- */
+function getCardTableData(key) {
+  if (!DATA) return { title: 'Table', columns: [], rows: [] };
+  if (key === 'branch') {
+    return {
+      title: 'Sales by Sales Office',
+      columns: ['Sales Office', 'Display', 'Non-Display', 'Total'],
+      rows: DATA.byBranch.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
+    };
+  }
+  if (key === 'mch2') {
+    return {
+      title: 'Sales by MCH2',
+      columns: ['MCH2', 'Display', 'Non-Display', 'Total'],
+      rows: DATA.byMch2.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
+    };
+  }
+  const isDisplay = key === 'topDisplay';
+  const toggle = document.getElementById(isDisplay ? 'topDisplayToggle' : 'topNonDisplayToggle');
+  const rankBy = toggle.checked ? 'qty' : 'net';
+  const rows = isDisplay
+    ? (rankBy === 'qty' ? DATA.top10DisplayByQty : DATA.top10DisplayByNet)
+    : (rankBy === 'qty' ? DATA.top10NonDisplayByQty : DATA.top10NonDisplayByNet);
+  return {
+    title: `Top 10 Article - ${isDisplay ? 'Display' : 'Non-Display'}`,
+    columns: ['Rank', 'Article ID', 'Article Name', 'Brand', 'MCH2', 'Net Sales', 'Sales Qty'],
+    rows: rows.map((r, i) => [i + 1, r.articleId, r.articleName, r.brand, r.mch2, r.net, r.qty]),
+  };
+}
+
+function downloadCSV(filename, columns, rows) {
+  const esc = v => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [columns.map(esc).join(',')].concat(rows.map(r => r.map(esc).join(',')));
+  const csv = '﻿' + lines.join('\r\n'); // BOM so Excel reads Thai text correctly
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function openTableModal(title, columns, rows) {
+  document.getElementById('tableModalTitle').textContent = title;
+  const thead = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  const tbody = rows.map(r => `<tr>${r.map(v => `<td>${v == null ? '—' : (typeof v === 'number' ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : v)}</td>`).join('')}</tr>`).join('');
+  document.getElementById('tableModalBody').innerHTML = `<table class="data-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  document.getElementById('tableModalOverlay').classList.add('open');
+}
+function closeTableModal() {
+  document.getElementById('tableModalOverlay').classList.remove('open');
+}
+
+document.querySelectorAll('[data-download]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!DATA) return;
+    const { title, columns, rows } = getCardTableData(btn.dataset.download);
+    downloadCSV(title.replace(/[^\w\-]+/g, '_') + '.csv', columns, rows);
+  });
+});
+document.querySelectorAll('[data-viewtable]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (!DATA) return;
+    const { title, columns, rows } = getCardTableData(btn.dataset.viewtable);
+    openTableModal(title, columns, rows);
+  });
+});
+document.getElementById('tableModalClose').addEventListener('click', closeTableModal);
+document.getElementById('tableModalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'tableModalOverlay') closeTableModal();
+});
+document.getElementById('topDisplayToggle').addEventListener('change', () => { if (DATA) renderTop10Section(); });
+document.getElementById('topNonDisplayToggle').addEventListener('change', () => { if (DATA) renderTop10Section(); });
+
+/* ============================================================
+   Tableau connection — field mapping, worksheet read, aggregation
+   ============================================================ */
+const REQUIRED_FIELDS = [
+  'vendor_id', 'vendor_name', 'branch', 'sls_grp_desc',
+  'mch3_desc', 'mch2_desc', 'mch1_desc', 'mch_desc', 'brand',
+  'article_id', 'article_name', 'flag_display_stk', 'display_comp',
+  'sale_qty', 'net_inc_tax', 'end_of_month',
+];
+const WORKSHEET_KEY_FIELD = 'article_id'; // presence of this field identifies the right worksheet
+
+function setStatus(msg) {
+  const el = document.getElementById('statusBanner');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+function setError(worksheetName, missingFields, actualFieldNames) {
+  const el = document.getElementById('errorBanner');
+  setStatus('');
+  el.innerHTML = `Extension cannot load — worksheet "${worksheetName}" is missing required field(s):
+    <ul class="field-error-list">${missingFields.map(f => `<li>${f}</li>`).join('')}</ul>
+    Rename the field in Tableau (or update REQUIRED_FIELDS in index.html) to match, then refresh.
+    <details style="margin-top:8px"><summary>Fields Tableau actually returned for this worksheet</summary>
+    <ul class="field-error-list">${(actualFieldNames || []).map(f => `<li>${f}</li>`).join('')}</ul></details>`;
+  el.style.display = 'block';
+}
+function clearError() {
+  document.getElementById('errorBanner').style.display = 'none';
+}
+
+// Measures placed on a shelf as an aggregation come back from the Extensions API
+// wrapped as "AGG(Field Name)" / "SUM(Field Name)" etc. — strip that wrapper so
+// REQUIRED_FIELDS and every row[...] lookup below can keep using plain field names.
+const AGG_WRAPPERS = ['AGG', 'SUM', 'AVG', 'MIN', 'MAX', 'CNT', 'CNTD', 'MEDIAN', 'ATTR', 'STDEV', 'STDEVP', 'VAR', 'VARP'];
+function normalizeFieldName(name) {
+  for (const fn of AGG_WRAPPERS) {
+    const prefix = fn + '(';
+    if (name.startsWith(prefix) && name.endsWith(')')) return name.slice(prefix.length, -1);
+  }
+  return name;
+}
+
+function readWorksheetRows(worksheet) {
+  return worksheet.getSummaryDataReaderAsync(undefined, { ignoreSelection: true }).then(reader => {
+    const pageCount = reader.pageCount;
+    let columns = [];
+    let allData = [];
+    let chain = Promise.resolve();
+    for (let i = 0; i < pageCount; i++) {
+      chain = chain.then(() => reader.getPageAsync(i)).then(page => {
+        if (i === 0) columns = page.columns;
+        allData = allData.concat(page.data);
+      });
+    }
+    return chain.then(() => reader.releaseAsync()).then(() => {
+      const rows = allData.map(dataRow => {
+        const obj = {};
+        columns.forEach((c, i) => { obj[normalizeFieldName(c.fieldName)] = dataRow[i].value; });
+        return obj;
+      });
+      return { rows, fieldNames: columns.map(c => normalizeFieldName(c.fieldName)) };
+    });
+  });
+}
+
+function findMissingFields(fieldNames, required) {
+  const have = new Set(fieldNames);
+  return required.filter(f => !have.has(f));
+}
+
+async function findDetailWorksheet() {
+  const dashboard = tableau.extensions.dashboardContent.dashboard;
+  for (const worksheet of dashboard.worksheets) {
+    const { fieldNames } = await readWorksheetRows(worksheet).then(
+      result => result,
+      () => ({ fieldNames: [] })
+    );
+    if (fieldNames.includes(WORKSHEET_KEY_FIELD)) {
+      return { worksheet, fieldNames };
+    }
+  }
+  return null;
+}
+
+/* ---------------- aggregation (mirrors the offline parse_xlsx.js pipeline) ---------------- */
+const FLAG_DISPLAY_VALUE = 'Display';
+
+function aggregateRows(rows) {
+  let netTotal = 0, netDisplay = 0, netNonDisplay = 0, qtyDisplay = 0, qtyNonDisplay = 0;
+  const byBranch = {};
+  const byMch2 = {};
+  const byArticle = {};
+  const vendorSet = new Set();
+
+  rows.forEach(r => {
+    // Sales by Sales Office reads Display vs Non-Display from flag_display_stk.
+    // KPI totals, Sales by MCH2, and Top 10 Article all read the split from
+    // display_comp instead (per business decision — the two fields disagree on
+    // ~82% of rows, so they intentionally stay separate, not reconciled).
+    const flagBranch = r.flag_display_stk === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
+    const flagDC = r.display_comp === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
+    const net = num(r.net_inc_tax);
+    const qty = num(r.sale_qty);
+
+    netTotal += net;
+    if (flagDC === 'Display') { netDisplay += net; qtyDisplay += qty; }
+    else { netNonDisplay += net; qtyNonDisplay += qty; }
+
+    vendorSet.add((r.vendor_id != null ? r.vendor_id : '') + '|' + (r.vendor_name || 'UNKNOWN'));
+
+    const branch = r.branch || 'UNKNOWN';
+    if (!byBranch[branch]) byBranch[branch] = { Display: 0, 'Non Display': 0 };
+    byBranch[branch][flagBranch] += net;
+
+    const mch2 = r.mch2_desc || 'UNKNOWN';
+    if (!byMch2[mch2]) byMch2[mch2] = { Display: 0, 'Non Display': 0 };
+    byMch2[mch2][flagDC] += net;
+
+    const artId = r.article_id;
+    if (artId != null) {
+      const key = artId + '|' + flagDC;
+      if (!byArticle[key]) {
+        byArticle[key] = {
+          articleId: artId, articleName: r.article_name, brand: r.brand,
+          mch2: r.mch2_desc, vendor: r.vendor_name, flag: flagDC, net: 0, qty: 0,
+        };
+      }
+      byArticle[key].net += net;
+      byArticle[key].qty += qty;
+    }
+  });
+
+  const byBranchRows = Object.keys(byBranch).map(b => ({
+    label: b, Display: byBranch[b]['Display'], NonDisplay: byBranch[b]['Non Display'],
+    total: byBranch[b]['Display'] + byBranch[b]['Non Display'],
+  })).sort((a, b) => b.total - a.total);
+
+  const byMch2Rows = Object.keys(byMch2).map(m => ({
+    label: m, Display: byMch2[m]['Display'], NonDisplay: byMch2[m]['Non Display'],
+    total: byMch2[m]['Display'] + byMch2[m]['Non Display'],
+  })).sort((a, b) => b.total - a.total);
+
+  const articleList = Object.values(byArticle);
+  const top10DisplayByNet = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.net - a.net).slice(0, 10);
+  const top10NonDisplayByNet = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.net - a.net).slice(0, 10);
+  const top10DisplayByQty = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
+  const top10NonDisplayByQty = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
+
+  const vendors = [...vendorSet].map(k => {
+    const [id, name] = k.split('|');
+    return { vendorId: id, vendorName: name };
+  });
+
+  return {
+    meta: { rowCount: rows.length, vendors },
+    kpi: { netTotal, netDisplay, netNonDisplay, qtyDisplay, qtyNonDisplay },
+    byBranch: byBranchRows,
+    byMch2: byMch2Rows,
+    top10DisplayByNet, top10NonDisplayByNet, top10DisplayByQty, top10NonDisplayByQty,
+  };
+}
+
+/* ---------------- boot ---------------- */
+let ACTIVE_WORKSHEET = null;
+
+async function loadAndRender() {
+  setStatus('Loading data…');
+  const { rows, fieldNames } = await readWorksheetRows(ACTIVE_WORKSHEET);
+  const missing = findMissingFields(fieldNames, REQUIRED_FIELDS);
+  if (missing.length) {
+    setError(ACTIVE_WORKSHEET.name, missing, fieldNames);
+    return;
+  }
+  clearError();
+  DATA = aggregateRows(rows);
+  renderAll();
+  setStatus('');
+}
+
+tableau.extensions.initializeAsync().then(async () => {
+  setStatus('Looking for the data worksheet…');
+  const found = await findDetailWorksheet();
+  if (!found) {
+    setError('(none found)', [WORKSHEET_KEY_FIELD], []);
+    return;
+  }
+  ACTIVE_WORKSHEET = found.worksheet;
+  const missing = findMissingFields(found.fieldNames, REQUIRED_FIELDS);
+  if (missing.length) {
+    setError(ACTIVE_WORKSHEET.name, missing, found.fieldNames);
+    return;
+  }
+  await loadAndRender();
+  ACTIVE_WORKSHEET.addEventListener(tableau.TableauEventType.SummaryDataChanged, () => {
+    loadAndRender();
+  });
+}).catch(err => {
+  setError('initializeAsync', ['Extensions API failed to initialize: ' + (err && err.message ? err.message : err)], []);
+});
+</script>
+</body>
+</html>

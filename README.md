@@ -51,6 +51,7 @@ tableau.extensions.1.latest.js        Tableau Extensions API (index.html เร�
    (หรือถ้า deploy ผ่าน GitHub Pages แล้ว จะสามารถแชร์ไฟล์ `.trex` นี้ให้คนอื่นใช้ได้เลยโดยไม่ต้องมีไฟล์ index.html อยู่ในเครื่อง เพราะ extension จะไปโหลดจาก URL บน GitHub Pages โดยตรง)
 4. Dashboard ต้องมี Worksheet อย่างน้อย 1 ตัว ที่ grain เป็นรายแถวธุรกรรม (ไม่ aggregate) ประกอบด้วย field ต่อไปนี้ — **ตั้งชื่อ Worksheet เป็นอะไรก็ได้ตามใจ** เพราะ extension จะดูจาก field `article_id` เพื่อระบุว่านี่คือ worksheet ที่ต้องใช้ (ไม่ได้ดูจากชื่อ worksheet)
 5. การเลือกเดือนทำได้ 2 ชั้น: (ก) ถ้ามี Filter ของ Tableau เองบน dashboard (เช่นบน field `end_of_month`) extension จะเห็นเฉพาะข้อมูลที่ผ่าน filter นั้นมาแล้ว และ (ข) ตัวกรอง **Year / Month ในหัว extension เอง** (มุมขวาบน) จะกรองซ้ำอีกชั้นจากข้อมูลที่ได้รับมา — ใช้อันไหนอันเดียว หรือทั้งสองอันร่วมกันก็ได้ เปลี่ยน filter ฝั่งไหนก็ตาม extension จะ refresh ให้เองอัตโนมัติ (ฟัง event `SummaryDataChanged`)
+   > **สำคัญ**: field `end_of_month` ที่ลากลง worksheet ต้อง**เป็นวันที่แบบเต็ม (exact date)** ไม่ใช่ date part ที่ตัดเหลือแค่ "Month" (เช่น กด custom เป็น discrete "January") — เพราะตัวกรอง Year/Month ของ extension อ่านค่าปีจากตัววันที่จริงด้วย ถ้าลากเป็น date part ที่ไม่มีปีติดมา ตัวกรองจะอ่านปีผิดหรือกรองไม่ได้
 6. ถ้า field ที่ต้องใช้ขาดไป extension จะโชว์ banner สีแดงบอกชื่อ field ที่ขาดแบบเจาะจง ไม่ใช่หน้าจอเปล่าๆ — ให้แก้ชื่อ field ใน Tableau (หรือแก้ค่าคงที่ `REQUIRED_FIELDS` ใน `index.html`) ให้ตรงกัน
 
 ### สเปก field ที่ Worksheet ต้องมี
@@ -99,4 +100,5 @@ tableau.extensions.1.latest.js        Tableau Extensions API (index.html เร�
 - **Display/Non-Display แยก field กันตามการ์ด โดยตั้งใจ**: `flag_display_stk` ขับ Sales by Sales Office ส่วน `display_comp` ขับ KPI/Sales by MCH2/Top 10 Article — ถ้าจะเปลี่ยนให้ทุกการ์ดอ่าน field เดียวกัน ต้องแก้ทั้งใน `aggregateRows()` ของ `index.html` และเอกสารนี้ให้ตรงกัน
 - field ที่เป็นตัวเลข (measure) ถ้าถูกลากขึ้น shelf แบบ aggregate จะได้ fieldName กลับมาเป็น `AGG(ชื่อ field)` ไม่ใช่ชื่อ field เพียวๆ — extension ตัดคำห่อนี้ให้อัตโนมัติแล้ว (`normalizeFieldName`) ไม่ต้องแก้อะไรฝั่ง Tableau
 - extension ฟัง event `SummaryDataChanged` ของ worksheet อยู่แล้ว เปลี่ยน filter/เปลี่ยนเดือนบน dashboard ข้อมูลจะ refresh ให้อัตโนมัติโดยไม่ต้องปิด-เปิด extension ใหม่
+- การหา worksheet ที่ถูกต้อง (ที่มี field `article_id`) ใช้ `getSummaryColumnsInfoAsync()` เช็คแค่รายชื่อ column เท่านั้น ไม่ได้โหลดข้อมูลทุกแถวของทุก worksheet บน dashboard มาเช็ค — เร็วกว่าและไม่กระทบ worksheet อื่นที่ไม่เกี่ยวข้อง
 - ทุกครั้งที่แก้ `display-performance/index.html` แล้ว push ขึ้น GitHub ต้องรอ GitHub Pages build ใหม่ (ปกติ 1–2 นาที) ก่อนที่ Tableau จะเห็นเวอร์ชันล่าสุด — ถ้าไม่เห็นการเปลี่ยนแปลง ให้ลอง hard refresh หรือปิด-เปิด dashboard ใหม่

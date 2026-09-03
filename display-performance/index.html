@@ -839,10 +839,17 @@ function findMissingFields(fieldNames, required) {
 async function findDetailWorksheet() {
   const dashboard = tableau.extensions.dashboardContent.dashboard;
   for (const worksheet of dashboard.worksheets) {
-    const { fieldNames } = await readWorksheetRows(worksheet).then(
-      result => result,
-      () => ({ fieldNames: [] })
-    );
+    // getSummaryColumnsInfoAsync() just lists the columns a worksheet would
+    // return — no row data fetched — so probing every worksheet on the
+    // dashboard to find the right one stays cheap and never full-reads a
+    // worksheet not shaped like our data table.
+    let columns = [];
+    try {
+      columns = await worksheet.getSummaryColumnsInfoAsync();
+    } catch (e) {
+      continue;
+    }
+    const fieldNames = columns.map(c => normalizeFieldName(c.fieldName));
     if (fieldNames.includes(WORKSHEET_KEY_FIELD)) {
       return { worksheet, fieldNames };
     }

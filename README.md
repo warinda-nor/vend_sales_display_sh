@@ -1,6 +1,6 @@
 # Showroom Display Performance — Tableau Extension
 
-Dashboard extension สำหรับวัด Sales Performance ในโชว์รูมว่ายอดขายที่เกิดขึ้นมาจากสินค้าที่มีตัวโชว์ (Display) หรือไม่มีตัวโชว์ (Non-Display) — KPI รวม, Sales by Sales Office, Sales by MCH2, Top 10 Article แยก Display/Non-Display พร้อมรูปสินค้า และปุ่ม Download/View table ต่อการ์ด
+Dashboard extension สำหรับวัด Sales Performance ในโชว์รูมว่ายอดขายที่เกิดขึ้นมาจากสินค้าที่มีตัวโชว์ (Display) หรือไม่มีตัวโชว์ (Non-Display) — KPI รวม, Sales by Sales Office, Sales by MCH2, Top 10 Article แยก Display/Non-Display พร้อมรูปสินค้า, ตัวกรอง Year/Month ในตัว extension เอง, ปุ่ม Download (CSV)/View table (แสดงในการ์ดแทน popup) ต่อการ์ด, และปุ่มดาวน์โหลดรวมเป็นไฟล์ Excel เดียว (5 sheet รวม Detail รายธุรกรรม) ที่หัว Dashboard
 
 ## โครงสร้างไฟล์
 
@@ -50,7 +50,7 @@ tableau.extensions.1.latest.js        Tableau Extensions API (index.html เร�
 3. เลือก **My Extensions → Access Local Extensions** แล้วเลือกไฟล์ `display-performance/ShowroomDisplayPerformance.trex`
    (หรือถ้า deploy ผ่าน GitHub Pages แล้ว จะสามารถแชร์ไฟล์ `.trex` นี้ให้คนอื่นใช้ได้เลยโดยไม่ต้องมีไฟล์ index.html อยู่ในเครื่อง เพราะ extension จะไปโหลดจาก URL บน GitHub Pages โดยตรง)
 4. Dashboard ต้องมี Worksheet อย่างน้อย 1 ตัว ที่ grain เป็นรายแถวธุรกรรม (ไม่ aggregate) ประกอบด้วย field ต่อไปนี้ — **ตั้งชื่อ Worksheet เป็นอะไรก็ได้ตามใจ** เพราะ extension จะดูจาก field `article_id` เพื่อระบุว่านี่คือ worksheet ที่ต้องใช้ (ไม่ได้ดูจากชื่อ worksheet)
-5. ตั้ง Filter บน field **`end_of_month`** ไว้ที่ dashboard เพื่อให้ผู้ใช้เลือกเดือนที่ต้องการดู — extension ไม่มีตัวเลือกเดือนของตัวเอง จะแสดงผลตามข้อมูลที่ Tableau filter ส่งมาให้เท่านั้น เปลี่ยน filter แล้ว extension จะ refresh ให้เองอัตโนมัติ
+5. การเลือกเดือนทำได้ 2 ชั้น: (ก) ถ้ามี Filter ของ Tableau เองบน dashboard (เช่นบน field `end_of_month`) extension จะเห็นเฉพาะข้อมูลที่ผ่าน filter นั้นมาแล้ว และ (ข) ตัวกรอง **Year / Month ในหัว extension เอง** (มุมขวาบน) จะกรองซ้ำอีกชั้นจากข้อมูลที่ได้รับมา — ใช้อันไหนอันเดียว หรือทั้งสองอันร่วมกันก็ได้ เปลี่ยน filter ฝั่งไหนก็ตาม extension จะ refresh ให้เองอัตโนมัติ (ฟัง event `SummaryDataChanged`)
 6. ถ้า field ที่ต้องใช้ขาดไป extension จะโชว์ banner สีแดงบอกชื่อ field ที่ขาดแบบเจาะจง ไม่ใช่หน้าจอเปล่าๆ — ให้แก้ชื่อ field ใน Tableau (หรือแก้ค่าคงที่ `REQUIRED_FIELDS` ใน `index.html`) ให้ตรงกัน
 
 ### สเปก field ที่ Worksheet ต้องมี
@@ -68,15 +68,34 @@ tableau.extensions.1.latest.js        Tableau Extensions API (index.html เร�
 | `display_comp` | ใช้แบ่ง Display/Non-Display สำหรับ **KPI, Sales by MCH2, Top 10 Article** — field นี้กับ `flag_display_stk` ให้ผลไม่ตรงกันในข้อมูลจริงส่วนใหญ่ เป็นความตั้งใจ ไม่ใช่บั๊ก |
 | `sale_qty` | Sales Qty ในทุกการ์ด / ใช้ rank Top 10 เมื่อเปิด toggle "Rank by Sales Qty" |
 | `net_inc_tax` | Net Sales ในทุกการ์ด |
-| `end_of_month` | ใช้เป็น field สำหรับ Tableau Filter เลือกเดือน (ดูข้อ 5) — extension เองไม่ได้อ่าน field นี้ไปคำนวณอะไร |
+| `end_of_month` | ใช้ให้ตัวกรอง Year/Month ในหัว extension ทำงาน และใช้เป็น field สำหรับ Tableau Filter เลือกเดือนได้ด้วย (ดูข้อ 5) |
+| `fv_sale_per_months` | ไม่ได้ใช้คำนวณอะไรในการ์ดไหน แต่ export ออกไปใน sheet "Detail Sales Display" ของไฟล์ Excel ที่ดาวน์โหลด |
 
 > ชื่อ field ต้องตรงกับในตาราง **เป๊ะๆ** (ตรงตามค่าคงที่ `REQUIRED_FIELDS` ท้ายไฟล์ `index.html`) ถ้าใน data source ใช้ชื่อคอลัมน์ต่างจากนี้ ให้แก้ค่าในตัวแปรนี้ให้ตรงกับ data source จริง
 
 ---
 
+## Download เป็น Excel (5 sheet)
+
+ไอคอนดาวน์โหลดที่หัว extension (ข้างตัวกรอง Year/Month) จะสร้างไฟล์ `.xlsx` เดียวที่มี 5 sheet โดยข้อมูลทุก sheet ตรงกับตัวกรอง Year/Month ที่เลือกอยู่ ณ ตอนนั้น:
+
+| Sheet | เนื้อหา |
+|---|---|
+| Sales by Sales Office | เหมือนตารางในการ์ด (Display/Non-Display/Total ต่อสาขา) |
+| Sales by MCH2 | เหมือนตารางในการ์ด (Display/Non-Display/Total ต่อ MCH2) |
+| Top10 Display | Top 10 article ฝั่ง Display ตามโหมด rank (Net Sales/Sales Qty) ที่การ์ดเปิดอยู่ตอนนั้น |
+| Top10 Non-Display | เหมือนกันแต่ฝั่ง Non-Display |
+| Detail Sales Display | ข้อมูล**รายธุรกรรมดิบ** (ไม่รวมยอด) ครบทุกคอลัมน์ตาม `REQUIRED_FIELDS` |
+
+ต้องมีอินเทอร์เน็ตตอนใช้งาน เพราะไลบรารีสร้างไฟล์ Excel (SheetJS) โหลดจาก CDN (`cdnjs.cloudflare.com`)
+
+ปุ่ม Download (ไอคอนเดี่ยว) และ View table บนแต่ละการ์ด (Sales by Sales Office, Sales by MCH2) ยังใช้แยกเฉพาะการ์ดนั้นได้ตามปกติ — View table จะสลับมาแสดงตารางแทนกราฟ**ในการ์ดเดิม** ไม่ได้เด้ง popup
+
+---
+
 ## ข้อจำกัดที่ควรรู้
 
-- **ไม่มี Parameter ที่ต้องสร้าง** — ต่างจาก extension ตัวอื่นที่อาจต้องมี Start Date/End Date Parameter, extension นี้ไม่อ่าน Parameter ใดๆ เลย การเลือกช่วงเวลาทำผ่าน Tableau Filter บน `end_of_month` ตามปกติ
+- **ไม่มี Parameter ที่ต้องสร้าง** — extension ไม่อ่าน Parameter ใดๆ เลย การเลือกช่วงเวลาทำผ่าน Tableau Filter ปกติ และ/หรือตัวกรอง Year/Month ในตัว extension เอง (ดูข้อ 5 ในหัวข้อติดตั้ง)
 - **Display/Non-Display แยก field กันตามการ์ด โดยตั้งใจ**: `flag_display_stk` ขับ Sales by Sales Office ส่วน `display_comp` ขับ KPI/Sales by MCH2/Top 10 Article — ถ้าจะเปลี่ยนให้ทุกการ์ดอ่าน field เดียวกัน ต้องแก้ทั้งใน `aggregateRows()` ของ `index.html` และเอกสารนี้ให้ตรงกัน
 - field ที่เป็นตัวเลข (measure) ถ้าถูกลากขึ้น shelf แบบ aggregate จะได้ fieldName กลับมาเป็น `AGG(ชื่อ field)` ไม่ใช่ชื่อ field เพียวๆ — extension ตัดคำห่อนี้ให้อัตโนมัติแล้ว (`normalizeFieldName`) ไม่ต้องแก้อะไรฝั่ง Tableau
 - extension ฟัง event `SummaryDataChanged` ของ worksheet อยู่แล้ว เปลี่ยน filter/เปลี่ยนเดือนบน dashboard ข้อมูลจะ refresh ให้อัตโนมัติโดยไม่ต้องปิด-เปิด extension ใหม่

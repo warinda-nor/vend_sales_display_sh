@@ -106,6 +106,17 @@
   .brand h1 { font-size: 22px; margin: 0; letter-spacing: 0.02em; font-weight: 700; }
   .brand p { margin: 3px 0 0; font-size: 14px; color: rgba(255,255,255,0.72); }
 
+  .filter-bar { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; }
+  .filter-group label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255,255,255,0.72); font-weight: 700; }
+  .filter-group select {
+    padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13px;
+    font-family: inherit; min-width: 150px; cursor: pointer;
+  }
+  .filter-group select option { color: #0b0b0b; }
+  .icon-btn-dark { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+  .icon-btn-dark:hover { background: rgba(255,255,255,0.22); color: #fff; }
 
   .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; padding: 20px 24px 0; }
   .col-3 { grid-column: span 3; }
@@ -143,11 +154,8 @@
   }
   .btn-pill:hover { background: var(--grid); color: var(--text-primary); }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(11,11,11,0.45); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
-  .modal-overlay.open { display: flex; }
-  .modal-box { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 20px; max-width: 900px; width: 100%; max-height: 80vh; overflow: auto; }
-  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .modal-head h4 { margin: 0; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-primary); }
+  .inline-table { overflow-x: auto; }
+  .inline-table table.data-table th { text-align: left; }
 
   .toggle-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; cursor: pointer; flex: none; }
   .toggle-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
@@ -231,20 +239,37 @@
 </head>
 <body>
 
+<header class="topbar">
+  <div class="brand">
+    <div class="mark">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="1.5" stroke="#fff" stroke-width="2"/><path d="M9 20h6M12 16v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <h1>SHOWROOM DISPLAY PERFORMANCE</h1>
+      <p>Sales Performance : Display vs Non-Display</p>
+    </div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label for="filterYear">Year</label>
+      <select id="filterYear"></select>
+    </div>
+    <div class="filter-group">
+      <label for="filterMonth">Month</label>
+      <select id="filterMonth"></select>
+    </div>
+    <div class="filter-group">
+      <label style="visibility:hidden">.</label>
+      <button class="icon-btn icon-btn-dark" type="button" id="downloadAllBtn" title="Download all tables as Excel">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
 <div class="wrap">
   <div class="banner status" id="statusBanner">Connecting to Tableau…</div>
   <div class="banner error" id="errorBanner"></div>
-  <header class="topbar">
-    <div class="brand">
-      <div class="mark">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="1.5" stroke="#fff" stroke-width="2"/><path d="M9 20h6M12 16v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-      </div>
-      <div>
-        <h1>SHOWROOM DISPLAY PERFORMANCE</h1>
-        <p>Sales Performance : Display vs Non-Display</p>
-      </div>
-    </div>
-  </header>
 
   <div class="grid">
     <div class="card col-3" id="kpi-vendor"></div>
@@ -268,12 +293,13 @@
         </div>
       </div>
       <div id="chart-branch"></div>
+      <div id="chart-branch-table" class="inline-table" style="display:none"></div>
     </div>
     <div class="card col-6">
       <div class="card-head-row">
         <div>
           <h3>Sales by MCH2</h3>
-          <p class="sub">% Share of Net Sales — Display vs Non-Display, by merchandise group (MCH2)</p>
+          <p class="sub">% Share of Net Sales — Display vs Non-Display, by MCH2</p>
         </div>
         <div class="card-head-actions">
           <div class="card-toolbar">
@@ -285,6 +311,7 @@
         </div>
       </div>
       <div id="chart-mch2"></div>
+      <div id="chart-mch2-table" class="inline-table" style="display:none"></div>
     </div>
 
     <div class="card col-6">
@@ -334,21 +361,11 @@
 
 <div id="tooltip" class="tooltip"></div>
 
-<div class="modal-overlay" id="tableModalOverlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h4 id="tableModalTitle">Table</h4>
-      <button class="icon-btn" type="button" id="tableModalClose" title="Close">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-    <div id="tableModalBody"></div>
-  </div>
-</div>
-
 <script src="../tableau.extensions.1.latest.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
-let DATA = null;
+let DATA = null; // { rows, meta: { months, vendors } } — populated live from Tableau
+let COMPUTED = null; // recomputed from DATA.rows on every Year/Month filter change
 
 function num(v) { return (typeof v === 'number' && !isNaN(v)) ? v : 0; }
 function fmtCompact(n, digits) {
@@ -368,6 +385,114 @@ function fmtPct(n, digits) {
 const FLAG_COLOR = { Display: 'var(--flag-display)', NonDisplay: 'var(--flag-nondisplay)' };
 const FLAG_LABEL = { Display: 'Display', NonDisplay: 'Non-Display' };
 const FLAG_ORDER = ['Display', 'NonDisplay'];
+
+/* ============================================================
+   Aggregation — mirrors aggregateRows() in the live .trex extension,
+   so the Year/Month filter below recomputes everything the same way
+   the extension will when reading live from Tableau.
+   ============================================================ */
+const FLAG_DISPLAY_VALUE = 'Display';
+
+function aggregateAll(rows) {
+  let netTotal = 0, netDisplay = 0, netNonDisplay = 0, qtyDisplay = 0, qtyNonDisplay = 0;
+  const byBranch = {};
+  const byMch2 = {};
+  const byArticle = {};
+
+  rows.forEach(r => {
+    // Sales by Sales Office reads Display vs Non-Display from flag_display_stk.
+    // KPI totals, Sales by MCH2, and Top 10 Article all read the split from
+    // display_comp instead (per business decision — the two fields disagree on
+    // ~82% of rows, so they intentionally stay separate, not reconciled).
+    const flagBranch = r.flag_display_stk === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
+    const flagDC = r.display_comp === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
+    const net = num(r.net_inc_tax);
+    const qty = num(r.sale_qty);
+
+    netTotal += net;
+    if (flagDC === 'Display') { netDisplay += net; qtyDisplay += qty; }
+    else { netNonDisplay += net; qtyNonDisplay += qty; }
+
+    const branch = r.branch || 'UNKNOWN';
+    if (!byBranch[branch]) byBranch[branch] = { Display: 0, 'Non Display': 0 };
+    byBranch[branch][flagBranch] += net;
+
+    const mch2 = r.mch2_desc || 'UNKNOWN';
+    if (!byMch2[mch2]) byMch2[mch2] = { Display: 0, 'Non Display': 0 };
+    byMch2[mch2][flagDC] += net;
+
+    const artId = r.article_id;
+    if (artId != null) {
+      const key = artId + '|' + flagDC;
+      if (!byArticle[key]) {
+        byArticle[key] = {
+          articleId: artId, articleName: r.article_name, brand: r.brand,
+          mch2: r.mch2_desc, flag: flagDC, net: 0, qty: 0,
+        };
+      }
+      byArticle[key].net += net;
+      byArticle[key].qty += qty;
+    }
+  });
+
+  const byBranchRows = Object.keys(byBranch).map(b => ({
+    label: b, Display: byBranch[b]['Display'], NonDisplay: byBranch[b]['Non Display'],
+    total: byBranch[b]['Display'] + byBranch[b]['Non Display'],
+  })).sort((a, b) => b.total - a.total);
+
+  const byMch2Rows = Object.keys(byMch2).map(m => ({
+    label: m, Display: byMch2[m]['Display'], NonDisplay: byMch2[m]['Non Display'],
+    total: byMch2[m]['Display'] + byMch2[m]['Non Display'],
+  })).sort((a, b) => b.total - a.total);
+
+  const articleList = Object.values(byArticle);
+  const top10DisplayByNet = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.net - a.net).slice(0, 10);
+  const top10NonDisplayByNet = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.net - a.net).slice(0, 10);
+  const top10DisplayByQty = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
+  const top10NonDisplayByQty = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
+
+  return {
+    kpi: { netTotal, netDisplay, netNonDisplay, qtyDisplay, qtyNonDisplay },
+    byBranch: byBranchRows,
+    byMch2: byMch2Rows,
+    top10DisplayByNet, top10NonDisplayByNet, top10DisplayByQty, top10NonDisplayByQty,
+  };
+}
+
+/* ---------------- Year / Month filter ---------------- */
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function populateFilters() {
+  const months = DATA.meta.months || [];
+  const years = [...new Set(months.map(m => m.ym.split('-')[0]))].sort();
+  const monthNums = [...new Set(months.map(m => m.ym.split('-')[1]))].sort();
+
+  const yearSel = document.getElementById('filterYear');
+  const monthSel = document.getElementById('filterMonth');
+  const prevY = yearSel.value;
+  const prevM = monthSel.value;
+
+  yearSel.innerHTML = `<option value="all">All Years</option>` + years.map(y => `<option value="${y}">${y}</option>`).join('');
+  monthSel.innerHTML = `<option value="all">All Months</option>` + monthNums.map(mn => `<option value="${mn}">${MONTH_NAMES[parseInt(mn, 10) - 1]}</option>`).join('');
+
+  // Re-fetches (e.g. after the Tableau filter changes) rebuild these options from scratch —
+  // restore the previous picks so an in-extension filter selection survives a data refresh.
+  if ([...yearSel.options].some(o => o.value === prevY)) yearSel.value = prevY;
+  if ([...monthSel.options].some(o => o.value === prevM)) monthSel.value = prevM;
+}
+
+function getFilteredRows() {
+  const y = document.getElementById('filterYear').value;
+  const m = document.getElementById('filterMonth').value;
+  if (y === 'all' && m === 'all') return DATA.rows;
+  return DATA.rows.filter(r => {
+    if (!r.ym) return false;
+    const [ry, rm] = r.ym.split('-');
+    if (y !== 'all' && ry !== y) return false;
+    if (m !== 'all' && rm !== m) return false;
+    return true;
+  });
+}
 
 /* ---------------- tooltip ---------------- */
 const tooltipEl = document.getElementById('tooltip');
@@ -402,7 +527,7 @@ function renderKpi(id, opts) {
 }
 
 function renderKpis() {
-  const k = DATA.kpi;
+  const k = COMPUTED.kpi;
   const total = k.netTotal;
   const iconVendor = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 21V7l8-4 8 4v14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 21v-6h6v6M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const iconSales = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 18V10M10 18V6M16 18V13M20 18V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
@@ -421,21 +546,21 @@ function renderKpis() {
   });
   renderKpi('kpi-netSales', {
     label: 'Net Sales (Total)',
-    value: fmtM(total),
+    value: fmtCompact(total),
     iconBg: 'var(--border)', iconColor: 'var(--text-secondary)',
     icon: iconSales,
     meta: `Sales Qty : <b>${fmtInt(k.qtyDisplay + k.qtyNonDisplay)}</b>`,
   });
   renderKpi('kpi-display', {
     label: 'Net Sales — Display',
-    value: fmtM(k.netDisplay),
+    value: fmtCompact(k.netDisplay),
     iconBg: 'var(--flag-display-wash)', iconColor: 'var(--flag-display)',
     icon: iconDisplay,
     meta: `<span class="dot" style="background:var(--flag-display)"></span>${fmtPct(total ? k.netDisplay/total : 0)} of total sales`,
   });
   renderKpi('kpi-nondisplay', {
     label: 'Net Sales — Non-Display',
-    value: fmtM(k.netNonDisplay),
+    value: fmtCompact(k.netNonDisplay),
     iconBg: 'var(--flag-nondisplay-wash)', iconColor: 'var(--flag-nondisplay)',
     icon: iconBox,
     meta: `<span class="dot" style="background:var(--flag-nondisplay)"></span>${fmtPct(total ? k.netNonDisplay/total : 0)} of total sales`,
@@ -518,40 +643,83 @@ function renderTop10Card(containerId, toggleId, subId, byNetRows, byQtyRows, sub
 
 /* ---------------- boot ---------------- */
 function renderTop10Section() {
-  renderTop10Card('table-topDisplay', 'topDisplayToggle', 'topDisplay-sub', DATA.top10DisplayByNet, DATA.top10DisplayByQty, 'articles with showroom display');
-  renderTop10Card('table-topNonDisplay', 'topNonDisplayToggle', 'topNonDisplay-sub', DATA.top10NonDisplayByNet, DATA.top10NonDisplayByQty, 'articles without showroom display');
+  renderTop10Card('table-topDisplay', 'topDisplayToggle', 'topDisplay-sub', COMPUTED.top10DisplayByNet, COMPUTED.top10DisplayByQty, 'articles with showroom display');
+  renderTop10Card('table-topNonDisplay', 'topNonDisplayToggle', 'topNonDisplay-sub', COMPUTED.top10NonDisplayByNet, COMPUTED.top10NonDisplayByQty, 'articles without showroom display');
+}
+
+/* ---------------- inline "view table" (replaces chart in-place, no modal) ---------------- */
+const inlineTableOpen = { branch: false, mch2: false };
+
+function buildDataTableHTML(columns, rows) {
+  const thead = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+  const tbody = rows.map(r => `<tr>${r.map(v => `<td>${v == null ? '—' : (typeof v === 'number' ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : v)}</td>`).join('')}</tr>`).join('');
+  return `<table class="data-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+}
+
+function renderInlineTable(key) {
+  const { columns, rows } = getCardTableData(key);
+  document.getElementById(`chart-${key}-table`).innerHTML = buildDataTableHTML(columns, rows);
+}
+
+function setupViewTableToggle(key) {
+  const btn = document.querySelector(`[data-viewtable="${key}"]`);
+  const chartEl = document.getElementById(`chart-${key}`);
+  const tableEl = document.getElementById(`chart-${key}-table`);
+  btn.addEventListener('click', () => {
+    inlineTableOpen[key] = !inlineTableOpen[key];
+    if (inlineTableOpen[key]) {
+      renderInlineTable(key);
+      chartEl.style.display = 'none';
+      tableEl.style.display = '';
+      btn.textContent = 'View chart';
+    } else {
+      chartEl.style.display = '';
+      tableEl.style.display = 'none';
+      btn.textContent = 'View table';
+    }
+  });
 }
 
 function renderAll() {
+  COMPUTED = aggregateAll(getFilteredRows());
   renderKpis();
-  renderStackedBars('chart-branch', DATA.byBranch);
-  renderStackedBars('chart-mch2', DATA.byMch2);
+  renderStackedBars('chart-branch', COMPUTED.byBranch);
+  renderStackedBars('chart-mch2', COMPUTED.byMch2);
   renderTop10Section();
+  if (inlineTableOpen.branch) renderInlineTable('branch');
+  if (inlineTableOpen.mch2) renderInlineTable('mch2');
 }
 
-/* ---------------- per-card download / view table ---------------- */
+/* ---------------- per-card download ---------------- */
 function getCardTableData(key) {
-  if (!DATA) return { title: 'Table', columns: [], rows: [] };
   if (key === 'branch') {
     return {
       title: 'Sales by Sales Office',
       columns: ['Sales Office', 'Display', 'Non-Display', 'Total'],
-      rows: DATA.byBranch.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
+      rows: COMPUTED.byBranch.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
     };
   }
   if (key === 'mch2') {
     return {
       title: 'Sales by MCH2',
       columns: ['MCH2', 'Display', 'Non-Display', 'Total'],
-      rows: DATA.byMch2.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
+      rows: COMPUTED.byMch2.map(r => [r.label, r.Display, r.NonDisplay, r.total]),
+    };
+  }
+  if (key === 'detail') {
+    const cols = ['vendor_id','vendor_name','branch','sls_grp_desc','mch3_desc','mch2_desc','mch1_desc','mch_desc','brand','article_id','article_name','flag_display_stk','display_comp','fv_sale_per_months','sale_qty','net_inc_tax','end_of_month'];
+    return {
+      title: 'Detail Sales Display',
+      columns: cols,
+      rows: getFilteredRows().map(r => cols.map(c => r[c])),
     };
   }
   const isDisplay = key === 'topDisplay';
   const toggle = document.getElementById(isDisplay ? 'topDisplayToggle' : 'topNonDisplayToggle');
   const rankBy = toggle.checked ? 'qty' : 'net';
   const rows = isDisplay
-    ? (rankBy === 'qty' ? DATA.top10DisplayByQty : DATA.top10DisplayByNet)
-    : (rankBy === 'qty' ? DATA.top10NonDisplayByQty : DATA.top10NonDisplayByNet);
+    ? (rankBy === 'qty' ? COMPUTED.top10DisplayByQty : COMPUTED.top10DisplayByNet)
+    : (rankBy === 'qty' ? COMPUTED.top10NonDisplayByQty : COMPUTED.top10NonDisplayByNet);
   return {
     title: `Top 10 Article - ${isDisplay ? 'Display' : 'Non-Display'}`,
     columns: ['Rank', 'Article ID', 'Article Name', 'Brand', 'MCH2', 'Net Sales', 'Sales Qty'],
@@ -577,37 +745,26 @@ function downloadCSV(filename, columns, rows) {
   URL.revokeObjectURL(url);
 }
 
-function openTableModal(title, columns, rows) {
-  document.getElementById('tableModalTitle').textContent = title;
-  const thead = `<tr>${columns.map(c => `<th>${c}</th>`).join('')}</tr>`;
-  const tbody = rows.map(r => `<tr>${r.map(v => `<td>${v == null ? '—' : (typeof v === 'number' ? v.toLocaleString('en-US', { maximumFractionDigits: 2 }) : v)}</td>`).join('')}</tr>`).join('');
-  document.getElementById('tableModalBody').innerHTML = `<table class="data-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
-  document.getElementById('tableModalOverlay').classList.add('open');
-}
-function closeTableModal() {
-  document.getElementById('tableModalOverlay').classList.remove('open');
-}
+/* ---------------- download all tables as one Excel workbook (one sheet per card) ---------------- */
+function downloadAllExcel() {
+  const wb = XLSX.utils.book_new();
+  [
+    { key: 'branch', sheetName: 'Sales by Sales Office' },
+    { key: 'mch2', sheetName: 'Sales by MCH2' },
+    { key: 'topDisplay', sheetName: 'Top10 Display' },
+    { key: 'topNonDisplay', sheetName: 'Top10 Non-Display' },
+    { key: 'detail', sheetName: 'Detail Sales Display' },
+  ].forEach(({ key, sheetName }) => {
+    const { columns, rows } = getCardTableData(key);
+    const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
+  });
 
-document.querySelectorAll('[data-download]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (!DATA) return;
-    const { title, columns, rows } = getCardTableData(btn.dataset.download);
-    downloadCSV(title.replace(/[^\w\-]+/g, '_') + '.csv', columns, rows);
-  });
-});
-document.querySelectorAll('[data-viewtable]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (!DATA) return;
-    const { title, columns, rows } = getCardTableData(btn.dataset.viewtable);
-    openTableModal(title, columns, rows);
-  });
-});
-document.getElementById('tableModalClose').addEventListener('click', closeTableModal);
-document.getElementById('tableModalOverlay').addEventListener('click', e => {
-  if (e.target.id === 'tableModalOverlay') closeTableModal();
-});
-document.getElementById('topDisplayToggle').addEventListener('change', () => { if (DATA) renderTop10Section(); });
-document.getElementById('topNonDisplayToggle').addEventListener('change', () => { if (DATA) renderTop10Section(); });
+  const y = document.getElementById('filterYear').value;
+  const m = document.getElementById('filterMonth').value;
+  const period = (y === 'all' && m === 'all') ? 'AllPeriod' : `${y === 'all' ? 'AllYears' : y}_${m === 'all' ? 'AllMonths' : m}`;
+  XLSX.writeFile(wb, `ShowroomDisplayPerformance_${period}.xlsx`);
+}
 
 /* ============================================================
    Tableau connection — field mapping, worksheet read, aggregation
@@ -616,7 +773,7 @@ const REQUIRED_FIELDS = [
   'vendor_id', 'vendor_name', 'branch', 'sls_grp_desc',
   'mch3_desc', 'mch2_desc', 'mch1_desc', 'mch_desc', 'brand',
   'article_id', 'article_name', 'flag_display_stk', 'display_comp',
-  'sale_qty', 'net_inc_tax', 'end_of_month',
+  'fv_sale_per_months', 'sale_qty', 'net_inc_tax', 'end_of_month',
 ];
 const WORKSHEET_KEY_FIELD = 'article_id'; // presence of this field identifies the right worksheet
 
@@ -693,99 +850,76 @@ async function findDetailWorksheet() {
   return null;
 }
 
-/* ---------------- aggregation (mirrors the offline parse_xlsx.js pipeline) ---------------- */
-const FLAG_DISPLAY_VALUE = 'Display';
-
-function aggregateRows(rows) {
-  let netTotal = 0, netDisplay = 0, netNonDisplay = 0, qtyDisplay = 0, qtyNonDisplay = 0;
-  const byBranch = {};
-  const byMch2 = {};
-  const byArticle = {};
-  const vendorSet = new Set();
-
-  rows.forEach(r => {
-    // Sales by Sales Office reads Display vs Non-Display from flag_display_stk.
-    // KPI totals, Sales by MCH2, and Top 10 Article all read the split from
-    // display_comp instead (per business decision — the two fields disagree on
-    // ~82% of rows, so they intentionally stay separate, not reconciled).
-    const flagBranch = r.flag_display_stk === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
-    const flagDC = r.display_comp === FLAG_DISPLAY_VALUE ? 'Display' : 'Non Display';
-    const net = num(r.net_inc_tax);
-    const qty = num(r.sale_qty);
-
-    netTotal += net;
-    if (flagDC === 'Display') { netDisplay += net; qtyDisplay += qty; }
-    else { netNonDisplay += net; qtyNonDisplay += qty; }
-
-    vendorSet.add((r.vendor_id != null ? r.vendor_id : '') + '|' + (r.vendor_name || 'UNKNOWN'));
-
-    const branch = r.branch || 'UNKNOWN';
-    if (!byBranch[branch]) byBranch[branch] = { Display: 0, 'Non Display': 0 };
-    byBranch[branch][flagBranch] += net;
-
-    const mch2 = r.mch2_desc || 'UNKNOWN';
-    if (!byMch2[mch2]) byMch2[mch2] = { Display: 0, 'Non Display': 0 };
-    byMch2[mch2][flagDC] += net;
-
-    const artId = r.article_id;
-    if (artId != null) {
-      const key = artId + '|' + flagDC;
-      if (!byArticle[key]) {
-        byArticle[key] = {
-          articleId: artId, articleName: r.article_name, brand: r.brand,
-          mch2: r.mch2_desc, vendor: r.vendor_name, flag: flagDC, net: 0, qty: 0,
-        };
-      }
-      byArticle[key].net += net;
-      byArticle[key].qty += qty;
-    }
-  });
-
-  const byBranchRows = Object.keys(byBranch).map(b => ({
-    label: b, Display: byBranch[b]['Display'], NonDisplay: byBranch[b]['Non Display'],
-    total: byBranch[b]['Display'] + byBranch[b]['Non Display'],
-  })).sort((a, b) => b.total - a.total);
-
-  const byMch2Rows = Object.keys(byMch2).map(m => ({
-    label: m, Display: byMch2[m]['Display'], NonDisplay: byMch2[m]['Non Display'],
-    total: byMch2[m]['Display'] + byMch2[m]['Non Display'],
-  })).sort((a, b) => b.total - a.total);
-
-  const articleList = Object.values(byArticle);
-  const top10DisplayByNet = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.net - a.net).slice(0, 10);
-  const top10NonDisplayByNet = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.net - a.net).slice(0, 10);
-  const top10DisplayByQty = articleList.filter(a => a.flag === 'Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
-  const top10NonDisplayByQty = articleList.filter(a => a.flag === 'Non Display').sort((a, b) => b.qty - a.qty).slice(0, 10);
-
-  const vendors = [...vendorSet].map(k => {
-    const [id, name] = k.split('|');
-    return { vendorId: id, vendorName: name };
-  });
-
-  return {
-    meta: { rowCount: rows.length, vendors },
-    kpi: { netTotal, netDisplay, netNonDisplay, qtyDisplay, qtyNonDisplay },
-    byBranch: byBranchRows,
-    byMch2: byMch2Rows,
-    top10DisplayByNet, top10NonDisplayByNet, top10DisplayByQty, top10NonDisplayByQty,
-  };
+// Tableau date values arrive as timezone-naive calendar dates (e.g.
+// "2026-01-01T00:00:00"); handing that string to `new Date(...)` makes JS
+// interpret it as LOCAL midnight, and a later UTC read shifts the date in any
+// timezone ahead of UTC. Regex-parsing the YYYY-MM digits straight out of the
+// raw value avoids that round-trip entirely.
+function parseYearMonth(value) {
+  if (value == null) return null;
+  const s = (value instanceof Date) ? value.toISOString() : String(value);
+  const m = s.match(/^(\d{4})-(\d{2})-\d{2}/);
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+function parseEndOfMonthDisplay(value) {
+  if (value == null) return null;
+  const s = (value instanceof Date) ? value.toISOString() : String(value);
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : String(value);
 }
 
 /* ---------------- boot ---------------- */
 let ACTIVE_WORKSHEET = null;
+let listenersAttached = false;
 
 async function loadAndRender() {
   setStatus('Loading data…');
-  const { rows, fieldNames } = await readWorksheetRows(ACTIVE_WORKSHEET);
+  const { rows: rawRows, fieldNames } = await readWorksheetRows(ACTIVE_WORKSHEET);
   const missing = findMissingFields(fieldNames, REQUIRED_FIELDS);
   if (missing.length) {
     setError(ACTIVE_WORKSHEET.name, missing, fieldNames);
     return;
   }
   clearError();
-  DATA = aggregateRows(rows);
+
+  const vendorSet = new Set();
+  const ymSet = new Set();
+  rawRows.forEach(r => {
+    r.ym = parseYearMonth(r.end_of_month);
+    r.end_of_month = parseEndOfMonthDisplay(r.end_of_month);
+    if (r.ym) ymSet.add(r.ym);
+    vendorSet.add((r.vendor_id != null ? r.vendor_id : '') + '|' + (r.vendor_name || 'UNKNOWN'));
+  });
+  const months = [...ymSet].sort().map(ym => {
+    const [y, mn] = ym.split('-');
+    return { ym, label: `${MONTH_NAMES[parseInt(mn, 10) - 1]} ${y}` };
+  });
+  const vendors = [...vendorSet].map(k => {
+    const [id, name] = k.split('|');
+    return { vendorId: id, vendorName: name };
+  });
+
+  DATA = { rows: rawRows, meta: { months, vendors } };
+  populateFilters();
   renderAll();
   setStatus('');
+
+  if (!listenersAttached) {
+    listenersAttached = true;
+    document.getElementById('filterYear').addEventListener('change', renderAll);
+    document.getElementById('filterMonth').addEventListener('change', renderAll);
+    document.getElementById('topDisplayToggle').addEventListener('change', renderTop10Section);
+    document.getElementById('topNonDisplayToggle').addEventListener('change', renderTop10Section);
+    setupViewTableToggle('branch');
+    setupViewTableToggle('mch2');
+    document.getElementById('downloadAllBtn').addEventListener('click', downloadAllExcel);
+    document.querySelectorAll('[data-download]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { title, columns, rows } = getCardTableData(btn.dataset.download);
+        downloadCSV(title.replace(/[^\w\-]+/g, '_') + '.csv', columns, rows);
+      });
+    });
+  }
 }
 
 tableau.extensions.initializeAsync().then(async () => {

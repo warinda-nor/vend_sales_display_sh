@@ -196,14 +196,12 @@
     color: var(--text-muted); font-weight: 700; padding: 6px 9px; border-bottom: 1px solid var(--grid);
   }
   table.data-table th:first-child, table.data-table td:first-child { text-align: left; }
-  table.data-table th:nth-child(3), table.data-table td:nth-child(3) { text-align: left; }
+  table.data-table th:nth-child(2), table.data-table td:nth-child(2) { text-align: left; }
   table.data-table td { padding: 9px 9px; border-bottom: 1px solid var(--grid); color: var(--text-secondary); }
   table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
   table.data-table tr:hover td { background: rgba(42,120,214,0.06); }
   table.data-table td.rank { color: var(--text-muted); width: 26px; }
   table.data-table td.name { color: var(--text-primary); font-weight: 400; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  table.data-table td.thumb { width: 44px; padding-right: 4px; }
-  table.data-table .prod-thumb { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: var(--grid); display: block; border: 1px solid var(--border); }
   table.data-table th.sortcol { color: var(--flag-display); }
   table.data-table td.sortcol { color: var(--text-primary); font-weight: 700; }
 
@@ -610,15 +608,12 @@ function renderStackedBars(containerId, rows) {
 }
 
 /* ---------------- Top 10 article tables ---------------- */
-const PRODUCT_IMAGE_BASE = 'https://productimage.boonthavorn.com/o2/';
-
 function renderTop10Table(containerId, rows, rankBy) {
   const el = document.getElementById(containerId);
   const netCls = rankBy === 'net' ? ' class="num sortcol"' : ' class="num"';
   const qtyCls = rankBy === 'qty' ? ' class="num sortcol"' : ' class="num"';
   const body = rows.map((r, i) => `<tr>
     <td class="rank">${i+1}</td>
-    <td class="thumb"><img class="prod-thumb" src="${PRODUCT_IMAGE_BASE}${r.articleId}" alt="" loading="lazy" onerror="this.style.visibility='hidden'"></td>
     <td class="name" title="${r.articleName}">${r.articleName}</td>
     <td>${r.brand || '—'}</td>
     <td>${r.mch2 || '—'}</td>
@@ -628,7 +623,7 @@ function renderTop10Table(containerId, rows, rankBy) {
 
   el.innerHTML = `<table class="data-table">
     <thead><tr>
-      <th>#</th><th>Image</th><th>Article</th><th>Brand</th><th>MCH2</th><th${netCls}>Net Sales</th><th${qtyCls}>Sales Qty</th>
+      <th>#</th><th>Article</th><th>Brand</th><th>MCH2</th><th${netCls}>Net Sales</th><th${qtyCls}>Sales Qty</th>
     </tr></thead>
     <tbody>${body}</tbody>
   </table>`;

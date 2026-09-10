@@ -216,6 +216,16 @@
     .stackbar-total { font-size: 11px; }
     .stackbar-seg { font-size: 9px; padding: 0 2px; }
     .sub-chart { display: none; }
+
+    /* Top 10 Article tables: no wrapping — let the row run as long as the
+       data needs and scroll horizontally (via the existing overflow-x:auto
+       wrapper) instead of squeezing/wrapping text into a narrow column. */
+    #table-topDisplay table.data-table,
+    #table-topNonDisplay table.data-table { width: max-content; min-width: 100%; }
+    #table-topDisplay table.data-table th, #table-topDisplay table.data-table td,
+    #table-topNonDisplay table.data-table th, #table-topNonDisplay table.data-table td { white-space: nowrap; }
+    #table-topDisplay table.data-table td.name,
+    #table-topNonDisplay table.data-table td.name { max-width: none; overflow: visible; text-overflow: clip; }
   }
 </style>
 </head>

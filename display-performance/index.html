@@ -705,7 +705,7 @@ function getCardTableData(key) {
     };
   }
   if (key === 'detail') {
-    const cols = ['vendor_id','vendor_name','branch','sls_grp_desc','mch3_desc','mch2_desc','mch1_desc','mch_desc','brand','article_id','article_name','flag_display_stk','display_comp','fv_sale_per_months','sale_qty','net_inc_tax','end_of_month'];
+    const cols = ['vendor_id','vendor_name','branch','sls_grp_desc','mch3_desc','mch2_desc','mch1_desc','mch_desc','brand','article_id','article_name','flag_display_stk','display_comp','sale_qty','net_inc_tax','end_of_month'];
     return {
       title: 'Detail Sales Display',
       columns: cols,
@@ -771,7 +771,7 @@ const REQUIRED_FIELDS = [
   'vendor_id', 'vendor_name', 'branch', 'sls_grp_desc',
   'mch3_desc', 'mch2_desc', 'mch1_desc', 'mch_desc', 'brand',
   'article_id', 'article_name', 'flag_display_stk', 'display_comp',
-  'fv_sale_per_months', 'sale_qty', 'net_inc_tax', 'end_of_month',
+  'sale_qty', 'net_inc_tax', 'end_of_month',
 ];
 const WORKSHEET_KEY_FIELD = 'article_id'; // presence of this field identifies the right worksheet
 

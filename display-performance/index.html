@@ -41,7 +41,7 @@
 
   .banner { display: none; border-bottom: 1px solid var(--border); font-size: 12.5px; padding: 8px 24px; text-align: center; }
   .banner.status { display: block; background: var(--flag-display-wash); color: var(--text-secondary); }
-  .banner.error { display: block; background: rgba(208,59,59,0.14); color: var(--critical); font-weight: 700; }
+  .banner.error { background: rgba(208,59,59,0.14); color: var(--critical); font-weight: 700; }
   .field-error-list { text-align: left; max-width: 640px; margin: 8px auto 0; font-weight: 400; }
   .field-error-list li { margin: 2px 0; }
 
@@ -141,6 +141,8 @@
   .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
   .legend-row .li { display: flex; align-items: center; gap: 6px; }
   .legend-row .sw { width: 10px; height: 10px; border-radius: 50%; }
+  .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 80px; color: var(--text-muted); font-size: 20px; }
+  .empty-state-cell { text-align: center !important; color: var(--text-muted); padding: 18px 9px; }
 
   #chart-branch, #chart-mch2 { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .stackbar-rows { display: flex; flex-direction: column; flex: 1; justify-content: space-evenly; }
@@ -521,13 +523,22 @@ function renderKpi(id, opts) {
 function renderKpis() {
   const k = COMPUTED.kpi;
   const total = k.netTotal;
+  const hasData = !!(DATA && DATA.rows && DATA.rows.length);
   const iconVendor = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 21V7l8-4 8 4v14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 21v-6h6v6M4 21h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const iconSales = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 18V10M10 18V6M16 18V13M20 18V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const iconDisplay = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="12" rx="1.5" stroke="currentColor" stroke-width="2"/><path d="M9 20h6M12 16v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const iconBox = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M21 8l-9-5-9 5 9 5 9-5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 8v8l9 5 9-5V8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 
+  if (!hasData) {
+    renderKpi('kpi-vendor', { label: 'Vendor', value: '-', valueClass: 'kpi-value-text', iconBg: 'var(--border)', iconColor: 'var(--text-secondary)', icon: iconVendor, meta: 'Vendor ID : <b>-</b>' });
+    renderKpi('kpi-netSales', { label: 'Net Sales (Total)', value: '-', iconBg: 'var(--border)', iconColor: 'var(--text-secondary)', icon: iconSales, meta: 'Sales Qty : <b>-</b>' });
+    renderKpi('kpi-display', { label: 'Net Sales — Display', value: '-', iconBg: 'var(--flag-display-wash)', iconColor: 'var(--flag-display)', icon: iconDisplay, meta: '-' });
+    renderKpi('kpi-nondisplay', { label: 'Net Sales — Non-Display', value: '-', iconBg: 'var(--flag-nondisplay-wash)', iconColor: 'var(--flag-nondisplay)', icon: iconBox, meta: '-' });
+    return;
+  }
+
   const vendors = DATA.meta.vendors || [];
-  const firstVendor = vendors[0] || { vendorId: '—', vendorName: '—' };
+  const firstVendor = vendors[0] || { vendorId: '-', vendorName: '-' };
   renderKpi('kpi-vendor', {
     label: 'Vendor',
     value: firstVendor.vendorName,
@@ -563,6 +574,11 @@ function renderKpis() {
 function renderStackedBars(containerId, rows) {
   const el = document.getElementById(containerId);
   const legend = `<div class="legend-row">${FLAG_ORDER.map(f => `<span class="li"><span class="sw" style="background:${FLAG_COLOR[f]}"></span>${FLAG_LABEL[f]}</span>`).join('')}</div>`;
+
+  if (!rows || rows.length === 0) {
+    el.innerHTML = legend + `<div class="empty-state">-</div>`;
+    return;
+  }
 
   // Narrower tracks (mobile card width) fit far less text per percentage point
   // than desktop, so the share thresholds that decide "show the full label"
@@ -615,7 +631,9 @@ function renderTop10Table(containerId, rows, rankBy) {
   const el = document.getElementById(containerId);
   const netCls = rankBy === 'net' ? ' class="num sortcol"' : ' class="num"';
   const qtyCls = rankBy === 'qty' ? ' class="num sortcol"' : ' class="num"';
-  const body = rows.map((r, i) => `<tr>
+  const body = (!rows || rows.length === 0)
+    ? `<tr><td colspan="6" class="empty-state-cell">-</td></tr>`
+    : rows.map((r, i) => `<tr>
     <td class="rank">${i+1}</td>
     <td class="name" title="${r.articleName}">${r.articleName}</td>
     <td>${r.brand || '—'}</td>
@@ -780,18 +798,24 @@ function setStatus(msg) {
   el.textContent = msg;
   el.style.display = msg ? 'block' : 'none';
 }
-function setError(worksheetName, missingFields, actualFieldNames) {
-  const el = document.getElementById('errorBanner');
-  setStatus('');
-  el.innerHTML = `Extension cannot load — worksheet "${worksheetName}" is missing required field(s):
-    <ul class="field-error-list">${missingFields.map(f => `<li>${f}</li>`).join('')}</ul>
-    Rename the field in Tableau (or update REQUIRED_FIELDS in index.html) to match, then refresh.
-    <details style="margin-top:8px"><summary>Fields Tableau actually returned for this worksheet</summary>
-    <ul class="field-error-list">${(actualFieldNames || []).map(f => `<li>${f}</li>`).join('')}</ul></details>`;
-  el.style.display = 'block';
-}
 function clearError() {
   document.getElementById('errorBanner').style.display = 'none';
+}
+// Field/worksheet problems no longer block the UI with a red banner — log the
+// detail to the console for whoever is debugging the Tableau setup, and fall
+// back to rendering every card with "-" placeholders instead.
+function setError(worksheetName, missingFields, actualFieldNames) {
+  console.warn(
+    `Showroom Display Performance: worksheet "${worksheetName}" is missing required field(s): ${missingFields.join(', ')}.`,
+    'Fields Tableau returned:', actualFieldNames || []
+  );
+  setStatus('');
+  renderEmptyShell();
+}
+function renderEmptyShell() {
+  DATA = { rows: [], meta: { months: [], vendors: [] } };
+  populateFilters();
+  renderAll();
 }
 
 // Measures placed on a shelf as an aggregation come back from the Extensions API
